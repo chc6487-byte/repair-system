@@ -1,0 +1,159 @@
+:root {
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --text: #1f2933;
+  --muted: #5f6b7a;
+  --border: #d5dbe3;
+  --primary: #1d4ed8;
+  --primary-text: #ffffff;
+  --ok-bg: #e7f6ec;
+  --ok-text: #14632d;
+  --err-bg: #fdecec;
+  --err-text: #9b1c1c;
+  --high: #c62828;
+  --mid: #b26a00;
+  --low: #2e7d32;
+  --radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161c;
+    --card: #1c222b;
+    --text: #e6eaf0;
+    --muted: #9aa5b4;
+    --border: #333c48;
+    --primary: #4f7cff;
+    --ok-bg: #143322;
+    --ok-text: #8fe0a8;
+    --err-bg: #3a1717;
+    --err-text: #ffaaaa;
+    --high: #ff6b6b;
+    --mid: #ffb84d;
+    --low: #6fd17a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.site-header {
+  padding: 20px 16px 8px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+h1 { margin: 0; font-size: 1.6rem; }
+h2 { margin: 0 0 12px; font-size: 1.2rem; }
+.subtitle { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.field { margin: 0 0 16px; border: 0; padding: 0; min-width: 0; }
+.field > label, .field > legend { display: block; font-weight: 600; margin-bottom: 6px; padding: 0; }
+.req { color: var(--high); }
+.hint { text-align: right; color: var(--muted); font-size: 0.85rem; }
+
+input[type="text"], textarea {
+  width: 100%;
+  /* 16px 以上可避免 iPhone 點擊輸入框時自動放大畫面 */
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+textarea { resize: vertical; min-height: 110px; }
+input:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+.choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice { position: relative; }
+.choice input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+.choice span {
+  display: inline-block;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 10px 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  cursor: pointer;
+  user-select: none;
+}
+.choice input:checked + span {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.choice input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+button {
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 48px;
+  padding: 12px 20px;
+  background: var(--primary);
+  color: var(--primary-text);
+}
+#submit-btn { width: 100%; font-size: 1.05rem; }
+button:disabled { opacity: 0.6; cursor: wait; }
+button.secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  min-height: 40px;
+  padding: 6px 14px;
+}
+
+.message { border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+.message.ok { background: var(--ok-bg); color: var(--ok-text); }
+.message.err { background: var(--err-bg); color: var(--err-text); }
+.message.info { color: var(--muted); padding: 4px 0; }
+
+.list-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.list-header h2 { margin: 0; }
+
+.repair-list { list-style: none; margin: 0; padding: 0; }
+.repair-item { border-top: 1px solid var(--border); padding: 12px 0; }
+.repair-item:first-child { border-top: 0; }
+.item-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 4px; }
+.tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+.tag.urgency-高 { color: var(--high); border-color: currentColor; }
+.tag.urgency-中 { color: var(--mid); border-color: currentColor; }
+.tag.urgency-低 { color: var(--low); border-color: currentColor; }
+.item-desc { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.item-meta { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
