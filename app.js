@@ -2,6 +2,22 @@
 (function () {
   "use strict";
 
+  // ---------- PWA：註冊 Service Worker 與離線提示 ----------
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {
+        /* 註冊失敗不影響一般使用 */
+      });
+    });
+  }
+  const offlineBanner = document.getElementById("offline-banner");
+  function updateOnline() {
+    if (offlineBanner) offlineBanner.hidden = navigator.onLine;
+  }
+  window.addEventListener("online", updateOnline);
+  window.addEventListener("offline", updateOnline);
+  updateOnline();
+
   const TABLE = "repair_requests";
   const LIST_LIMIT = 20;
   const LIMITS = { reporter_name: 50, location: 100, description: 1000 };
@@ -170,5 +186,6 @@
   }
 
   refreshBtn.addEventListener("click", loadList);
+  window.addEventListener("online", loadList); // 恢復連線時自動更新清單
   loadList();
 })();
