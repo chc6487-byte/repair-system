@@ -45,8 +45,18 @@ body {
   line-height: 1.6;
 }
 
+.offline-banner {
+  max-width: 720px;
+  margin: 0 auto 8px;
+  padding: 10px 16px;
+  background: var(--err-bg);
+  color: var(--err-text);
+  font-size: 0.9rem;
+}
+
 .site-header {
-  padding: 20px 16px 8px;
+  /* 安裝成 App 後，避開瀏海與狀態列 */
+  padding: calc(20px + env(safe-area-inset-top)) 16px 8px;
   max-width: 720px;
   margin: 0 auto;
 }

@@ -4,7 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="description" content="示範用報修登記系統：新增報修與查看最近清單。">
   <title>報修登記</title>
+  <!-- PWA：安裝到主畫面所需的設定 -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="報修登記">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,6 +22,10 @@
     <h1>報修登記</h1>
     <p class="subtitle">示範系統：請只填寫虛構資料</p>
   </header>
+
+  <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
+    目前離線：可以查看畫面，但無法送出報修或更新清單。
+  </div>
 
   <main>
     <section class="card" aria-labelledby="form-title">
