@@ -2,83 +2,109 @@
 <html lang="zh-Hant-TW">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#1d4ed8">
-  <meta name="description" content="示範用報修登記系統：新增報修與查看最近清單。">
-  <title>報修登記</title>
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="示範用產品領料單系統：請領部門申請、主管審核、倉管發料。">
+  <title>產品領料單</title>
   <!-- PWA：安裝到主畫面所需的設定 -->
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="報修登記">
+  <meta name="apple-mobile-web-app-title" content="產品領料單">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
-    <h1>報修登記</h1>
-    <p class="subtitle">示範系統：請只填寫虛構資料</p>
+    <div class="header-row">
+      <div>
+        <h1>產品領料單</h1>
+        <p class="subtitle">示範系統：請只填寫虛構資料</p>
+      </div>
+      <button id="logout-btn" type="button" class="secondary" hidden>登出</button>
+    </div>
+    <p id="user-info" class="user-info" hidden></p>
   </header>
 
   <div id="offline-banner" class="offline-banner" role="status" aria-live="polite" hidden>
-    目前離線：可以查看畫面，但無法送出報修或更新清單。
+    目前離線：可以查看畫面，但無法登入、送出或更新資料。
   </div>
 
   <main>
-    <section class="card" aria-labelledby="form-title">
-      <h2 id="form-title">新增報修</h2>
-      <form id="repair-form" novalidate>
+    <!-- 登入 -->
+    <section id="login-view" class="card" aria-labelledby="login-title" hidden>
+      <h2 id="login-title">登入</h2>
+      <form id="login-form" novalidate>
         <div class="field">
-          <label for="reporter_name">報修人 <span class="req">*</span></label>
-          <input id="reporter_name" name="reporter_name" type="text" maxlength="50" required autocomplete="name">
+          <label for="login-email">電子郵件</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" inputmode="email" required>
         </div>
-
         <div class="field">
-          <label for="location">地點或部門 <span class="req">*</span></label>
-          <input id="location" name="location" type="text" maxlength="100" required>
+          <label for="login-password">密碼</label>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <div id="login-message" class="message" role="status" aria-live="polite" hidden></div>
+        <button id="login-btn" type="submit" class="primary wide">登入</button>
+      </form>
+      <p class="hint-text">帳號由管理員建立；忘記密碼請聯絡管理員。</p>
+    </section>
+
+    <div id="app-message" class="message" role="status" aria-live="polite" hidden></div>
+
+    <!-- 新增／修改領料單（只有請領部門看得到） -->
+    <section id="form-card" class="card" aria-labelledby="form-title" hidden>
+      <h2 id="form-title">新增領料單</h2>
+      <form id="slip-form" novalidate>
+        <div class="field">
+          <label for="department">請領部門</label>
+          <input id="department" type="text" readonly tabindex="-1">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="pick-date">領料日期 <span class="req">*</span></label>
+            <input id="pick-date" name="pick_date" type="date" required>
+          </div>
+          <div class="field">
+            <label for="picker-name">領料人 <span class="req">*</span></label>
+            <input id="picker-name" name="picker_name" type="text" maxlength="50" required>
+          </div>
         </div>
 
         <fieldset class="field">
-          <legend>類別 <span class="req">*</span></legend>
-          <div class="choices">
-            <label class="choice"><input type="radio" name="category" value="設備" required><span>設備</span></label>
-            <label class="choice"><input type="radio" name="category" value="網路"><span>網路</span></label>
-            <label class="choice"><input type="radio" name="category" value="環境"><span>環境</span></label>
-            <label class="choice"><input type="radio" name="category" value="其他"><span>其他</span></label>
+          <legend>產品明細 <span class="req">*</span></legend>
+          <div class="items-head" aria-hidden="true">
+            <span>產品名稱規格</span><span>數量（pcs）</span><span></span>
           </div>
-        </fieldset>
-
-        <div class="field">
-          <label for="description">問題說明 <span class="req">*</span></label>
-          <textarea id="description" name="description" rows="4" maxlength="1000" required></textarea>
-          <div class="hint"><span id="desc-count">0</span> / 1000</div>
-        </div>
-
-        <fieldset class="field">
-          <legend>緊急程度 <span class="req">*</span></legend>
-          <div class="choices">
-            <label class="choice"><input type="radio" name="urgency" value="低"><span>低</span></label>
-            <label class="choice"><input type="radio" name="urgency" value="中" checked><span>中</span></label>
-            <label class="choice"><input type="radio" name="urgency" value="高"><span>高</span></label>
-          </div>
+          <div id="items" class="items"></div>
+          <button id="add-item-btn" type="button" class="secondary">＋ 新增產品</button>
         </fieldset>
 
         <div id="form-message" class="message" role="status" aria-live="polite" hidden></div>
 
-        <button id="submit-btn" type="submit">送出報修</button>
+        <div class="form-actions">
+          <button id="submit-btn" type="submit" class="primary wide">送出領料單</button>
+          <button id="cancel-edit-btn" type="button" class="secondary wide" hidden>取消修改</button>
+        </div>
       </form>
     </section>
 
-    <section class="card" aria-labelledby="list-title">
+    <!-- 領料單清單 -->
+    <section id="list-card" class="card" aria-labelledby="list-title" hidden>
       <div class="list-header">
-        <h2 id="list-title">最近 20 筆報修</h2>
+        <h2 id="list-title">領料單（最近 50 張）</h2>
         <button id="refresh-btn" type="button" class="secondary">重新整理</button>
       </div>
+      <div id="filters" class="filters" role="group" aria-label="篩選狀態">
+        <button type="button" class="chip" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" class="chip" data-filter="待審核" aria-pressed="false">待審核</button>
+        <button type="button" class="chip" data-filter="待發料" aria-pressed="false">待發料</button>
+        <button type="button" class="chip" data-filter="已發料" aria-pressed="false">已發料</button>
+      </div>
       <div id="list-message" class="message" role="status" aria-live="polite" hidden></div>
-      <ul id="repair-list" class="repair-list"></ul>
+      <ul id="slip-list" class="slip-list"></ul>
     </section>
   </main>
 

@@ -37,5 +37,9 @@ git merge --ff-only origin/main
 
 ## 五、目前範圍
 
-- 本階段唯一的交付物是 Excel（欄位表與範例資料），放在本資料夾。
-- 網頁、資料庫、簡報、操作說明本階段不做；要做之前先和使用者確認需求。
+- Excel（欄位表與範例資料）：本資料夾的 `領料單欄位表.xlsx`。
+- 網頁：儲存庫根目錄的 `index.html`、`style.css`、`app.js`、`config.js`、`sw.js`、`manifest.webmanifest`、`icons/`，由 GitHub Pages 發佈。
+- 資料庫：`supabase/picking_schema.sql`。所有寫入都透過資料庫函式，函式內檢查角色與部門；不要直接開放資料表的新增、修改、刪除權限。
+- 新增或改名網站檔案時，同步更新 `sw.js` 的檔案清單，並把 `CACHE_VERSION` 加 1。
+- 「還沒決定的事」裡標示「網頁暫定」的做法，修改前先和使用者確認。
+- 簡報、操作說明本階段不做；要做之前先和使用者確認需求。
