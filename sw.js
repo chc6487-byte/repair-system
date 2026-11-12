@@ -1,12 +1,12 @@
-// 報修登記 PWA 的 Service Worker
+// 產品領料單 PWA 的 Service Worker
 // 策略：
 // - 網站本身的檔案（HTML/CSS/JS/圖示）：先抓網路最新版，失敗（離線）時改用快取。
 // - supabase-js（CDN、固定版本號）：先用快取，沒有才抓網路。
-// - Supabase 資料 API：一律走網路，不快取，避免看到過期清單或重複送出。
+// - Supabase 登入與資料 API：一律走網路，不快取，避免看到過期清單或重複送出。
 // 修改網站檔案後，請把 CACHE_VERSION 加 1，讓舊快取被清掉。
 
 const CACHE_VERSION = "v1";
-const CACHE_NAME = "repair-pwa-" + CACHE_VERSION;
+const CACHE_NAME = "picking-pwa-" + CACHE_VERSION;
 
 const APP_SHELL = [
   "./",
@@ -17,6 +17,7 @@ const APP_SHELL = [
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png",
   "./icons/apple-touch-icon.png",
 ];
 const CDN_ASSETS = [
@@ -43,7 +44,8 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((k) => k.startsWith("repair-pwa-") && k !== CACHE_NAME)
+          // 一併清掉舊報修網站（repair-pwa-*）留下的快取
+          .filter((k) => (k.startsWith("repair-pwa-") || k.startsWith("picking-pwa-")) && k !== CACHE_NAME)
           .map((k) => caches.delete(k))
       );
       await self.clients.claim();
@@ -77,7 +79,7 @@ async function cacheFirst(request) {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET") return; // 送出報修（POST）不經過快取
+  if (request.method !== "GET") return; // 送出、審核、發料（POST）不經過快取
 
   const url = new URL(request.url);
   if (url.origin === self.location.origin) {
