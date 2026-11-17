@@ -98,6 +98,12 @@
 
   const ROLES = ["請領", "主管", "倉管"];
 
+  // 進入畫面「選擇人員」下拉選單的名單：選了就自動帶入部門與角色
+  // 要新增人員，在這裡加一行即可（role 只能是 請領／主管／倉管）
+  const PRESET_USERS = [
+    { name: "陳慧真", department: "倉管課", role: "主管" },
+  ];
+
   // 檢查名稱、部門、角色（資料庫函式也會再檢查一次）
   function validateProfile(name, department, role) {
     if (!name) return "請填寫名稱。";
@@ -180,13 +186,38 @@
     loadSlips();
   }
 
+  // ---------- 選擇人員下拉選單 ----------
+  const presetSelect = $("login-preset");
+  const loginName = $("login-name");
+  const loginDept = $("login-department");
+  const loginRole = $("login-role");
+  PRESET_USERS.forEach(function (u, i) {
+    const opt = el("option", "", u.name + "（" + u.department + "・" + (ROLE_LABEL[u.role] || u.role) + "）");
+    opt.value = String(i);
+    presetSelect.append(opt);
+  });
+  function applyPreset() {
+    const u = PRESET_USERS[Number(presetSelect.value)];
+    const fixed = presetSelect.value !== "" && !!u;
+    loginName.value = fixed ? u.name : "";
+    loginDept.value = fixed ? u.department : "";
+    loginRole.value = fixed ? u.role : "";
+    loginName.readOnly = fixed;
+    loginDept.readOnly = fixed;
+    loginRole.disabled = fixed;
+  }
+  presetSelect.addEventListener("change", function () {
+    hideMessage(loginMsg);
+    applyPreset();
+  });
+
   // 進入系統：沒有登入狀態就先匿名登入，再寫入名稱、部門與角色（只能設定一次）
   loginForm.addEventListener("submit", async function (event) {
     event.preventDefault();
     hideMessage(loginMsg);
-    const name = $("login-name").value.trim();
-    const dept = $("login-department").value.trim();
-    const role = $("login-role").value;
+    const name = loginName.value.trim();
+    const dept = loginDept.value.trim();
+    const role = loginRole.value;
     const problem = validateProfile(name, dept, role);
     if (problem) {
       showMessage(loginMsg, problem, "err");
@@ -213,6 +244,7 @@
         return;
       }
       loginForm.reset();
+      applyPreset();
       await enter();
     } catch (err) {
       showMessage(loginMsg, errText(err), "err");
