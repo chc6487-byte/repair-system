@@ -189,11 +189,15 @@ begin
   if coalesce(btrim(p_display_name), '') = '' or char_length(btrim(p_display_name)) > 50 then
     raise exception '請填寫名稱（最多 50 字）' using errcode = '22023';
   end if;
-  if coalesce(btrim(p_department), '') = '' or char_length(btrim(p_department)) > 50 then
-    raise exception '請填寫部門（最多 50 字）' using errcode = '22023';
-  end if;
   if p_role is null or p_role not in ('請領', '主管', '倉管') then
     raise exception '角色只能是 請領、主管 或 倉管' using errcode = '22023';
+  end if;
+  -- 領料部門只能是 生管課／製造課／品管課；倉管課主管與倉管人員的部門必須是倉管課
+  if p_role = '請領' and coalesce(btrim(p_department), '') not in ('生管課', '製造課', '品管課') then
+    raise exception '領料部門只能是 生管課、製造課 或 品管課' using errcode = '22023';
+  end if;
+  if p_role in ('主管', '倉管') and coalesce(btrim(p_department), '') <> '倉管課' then
+    raise exception '倉管課主管與倉管人員的部門必須是倉管課' using errcode = '22023';
   end if;
 
   insert into public.picking_profiles (user_id, display_name, department, role)
@@ -309,7 +313,7 @@ begin
 end;
 $$;
 
--- 審核通過：只有「主管」角色、自己部門、尚未審核的單（不記錄審核人與時間）
+-- 簽核（審核通過）：只有倉管課的「主管」可以，簽核所有部門尚未審核的單（不記錄審核人與時間）
 create or replace function public.approve_picking_slip(p_slip_no text)
 returns void
 language plpgsql
@@ -324,16 +328,13 @@ begin
   if not found then
     raise exception '這個帳號尚未設定部門與角色' using errcode = '42501';
   end if;
-  if prof.role <> '主管' then
-    raise exception '只有主管可以審核' using errcode = '42501';
+  if prof.role <> '主管' or prof.department <> '倉管課' then
+    raise exception '只有倉管課主管可以簽核' using errcode = '42501';
   end if;
 
   select * into s from public.picking_slips where slip_no = p_slip_no for update;
   if not found then
     raise exception '找不到領料單 %', p_slip_no using errcode = 'P0002';
-  end if;
-  if s.department <> prof.department then
-    raise exception '只能審核自己部門的領料單' using errcode = '42501';
   end if;
   if s.approved then
     raise exception '這張領料單已經審核通過' using errcode = '22023';

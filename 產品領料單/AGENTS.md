@@ -41,6 +41,7 @@ git merge --ff-only origin/main
 - 網頁：儲存庫根目錄的 `index.html`、`style.css`、`app.js`、`config.js`、`sw.js`、`manifest.webmanifest`、`icons/`，由 GitHub Pages 發佈。
 - 資料庫：`supabase/picking_schema.sql`。所有寫入都透過資料庫函式，函式內檢查角色與部門；不要直接開放資料表的新增、修改、刪除權限。
 - 登入：不需帳號密碼，使用 Supabase 匿名登入；使用者自行填寫名稱、部門並自選角色（`register_picking_profile`，每個身分只能設定一次）。
+- 角色與部門：領料部門＝生管課／製造課／品管課；倉管課主管簽核所有部門的單；倉管人員（倉管課）發料。
 - 新增或改名網站檔案時，同步更新 `sw.js` 的檔案清單，並把 `CACHE_VERSION` 加 1。
 - 「還沒決定的事」裡標示「網頁暫定」的做法，修改前先和使用者確認。
 - 簡報、操作說明本階段不做；要做之前先和使用者確認需求。

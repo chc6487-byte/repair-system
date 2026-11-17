@@ -5,7 +5,7 @@
 // - Supabase 登入與資料 API：一律走網路，不快取，避免看到過期清單或重複送出。
 // 修改網站檔案後，請把 CACHE_VERSION 加 1，讓舊快取被清掉。
 
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 const CACHE_NAME = "picking-pwa-" + CACHE_VERSION;
 
 const APP_SHELL = [
