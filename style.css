@@ -105,7 +105,7 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
   padding: 11px 12px;
   min-height: 46px;
 }
-input[readonly] { color: var(--muted); }
+input[readonly], select:disabled { color: var(--muted); }
 input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 
 /* 產品明細 */
