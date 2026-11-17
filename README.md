@@ -11,17 +11,19 @@
 ## 上線步驟
 
 1. 在 Supabase SQL Editor 執行 `supabase/picking_schema.sql`。
-2. Supabase 後台 → Authentication → Sign In / Providers：開啟「Allow new users to sign up」。
-   「Confirm email」可依需要開關：開啟時要先到信箱點確認連結才能登入；關閉時建立帳號後直接登入。
-3. Authentication → URL Configuration：Site URL 與 Redirect URLs 加入網站網址，確認信的連結才會回到網站。
-4. 儲存庫設為公開，並在 Settings → Pages 選擇 `main` 分支、根目錄發佈。
+2. Supabase 後台 → Authentication → Sign In / Providers：開啟「Allow anonymous sign-ins」
+   （「Allow new users to sign up」也要保持開啟）。
+3. 儲存庫設為公開，並在 Settings → Pages 選擇 `main` 分支、根目錄發佈。
 
-## 建立帳號
+## 進入系統（不需帳號密碼）
 
-登入頁按「還沒有帳號？建立帳號」，填寫電子郵件、密碼（至少 6 個字元）、名稱、部門與角色（請領／主管／倉管）。
-名稱、部門與角色只能設定一次，之後要修改請管理員依 `supabase/picking_schema.sql` 檔案最後的範例用 SQL 修改。
+開啟網站後填寫名稱、部門與角色（請領／主管／倉管），按「進入」即可使用（Supabase 匿名登入）。
 
-> 注意：角色由使用者自行選擇，任何人都能註冊成主管或倉管，只適合示範使用。
+- 登入狀態只存在這台裝置的這個瀏覽器；登出、清除瀏覽器資料或換裝置後會變成新的使用者，原本的身分無法找回。
+- 名稱、部門與角色進入後無法自行修改；要換角色就登出後重新進入。管理員也可依 `supabase/picking_schema.sql` 檔案最後的範例用 SQL 修改。
+- 已送出的領料單會保留，不受登出影響。
+
+> 注意：不需驗證身分且角色由使用者自行選擇，任何人都能以主管或倉管身分操作，只適合示範使用。
 
 ## 角色與權限
 
