@@ -59,7 +59,7 @@
 
   const MAX_ITEMS = 50;
   const LIST_LIMIT = 50;
-  const ROLE_LABEL = { 請領: "請領部門", 主管: "主管", 倉管: "倉管人員" };
+  const ROLE_LABEL = { 請領: "領料部門", 主管: "倉管課主管", 倉管: "倉管人員" };
 
   function showMessage(el, text, kind) {
     el.textContent = text;
@@ -100,6 +100,10 @@
   }
 
   const ROLES = ["請領", "主管", "倉管"];
+  // 各角色可選的部門（資料庫函式 register_picking_profile 也會檢查）
+  const PICK_DEPTS = ["生管課", "製造課", "品管課"];
+  const WAREHOUSE_DEPT = "倉管課";
+  const ROLE_DEPTS = { 請領: PICK_DEPTS, 主管: [WAREHOUSE_DEPT], 倉管: [WAREHOUSE_DEPT] };
 
   // 進入畫面「選擇人員」下拉選單的名單：選了就自動帶入部門與角色
   // 要新增人員，在這裡加一行即可（role 只能是 請領／主管／倉管）
@@ -111,9 +115,10 @@
   function validateProfile(name, department, role) {
     if (!name) return "請填寫名稱。";
     if (name.length > 50) return "名稱最多 50 字。";
-    if (!department) return "請填寫部門。";
-    if (department.length > 50) return "部門最多 50 字。";
     if (ROLES.indexOf(role) < 0) return "請選擇角色。";
+    if (ROLE_DEPTS[role].indexOf(department) < 0) {
+      return role === "請領" ? "領料部門只能是 生管課、製造課 或 品管課。" : "倉管課主管與倉管人員的部門必須是倉管課。";
+    }
     return "";
   }
 
@@ -199,8 +204,8 @@
   const DEFAULT_VIEW = { 請領: "領料", 主管: "審核", 倉管: "發料" };
   const VIEW_FILTER = { 領料: "all", 審核: "待審核", 發料: "待發料" };
   const VIEW_NOTE = {
-    領料: "只有請領部門可以新增領料單；你可以在下方查看所有領料單。",
-    審核: "只有主管可以審核自己部門的領料單；你可以在下方查看待審核的單。",
+    領料: "只有領料部門（生管課、製造課、品管課）可以新增領料單；你可以在下方查看所有領料單。",
+    審核: "只有倉管課主管可以簽核；你可以在下方查看待審核的單。",
     發料: "只有倉管人員可以勾選發料；你可以在下方查看待發料的單。",
   };
   const VIEW_ROLE = { 領料: "請領", 審核: "主管", 發料: "倉管" };
@@ -224,6 +229,26 @@
   const loginName = $("login-name");
   const loginDept = $("login-department");
   const loginRole = $("login-role");
+  // 依角色列出可選的部門；倉管課主管與倉管人員只有倉管課
+  function fillDepts(role, value) {
+    const depts = ROLE_DEPTS[role] || [];
+    loginDept.replaceChildren();
+    if (depts.length !== 1) {
+      const ph = el("option", "", role ? "請選擇" : "請先選擇角色");
+      ph.value = "";
+      loginDept.append(ph);
+    }
+    depts.forEach(function (d) {
+      const opt = el("option", "", d);
+      opt.value = d;
+      loginDept.append(opt);
+    });
+    loginDept.value = depts.indexOf(value) >= 0 ? value : depts.length === 1 ? depts[0] : "";
+  }
+  loginRole.addEventListener("change", function () {
+    fillDepts(loginRole.value, loginDept.value);
+  });
+
   PRESET_USERS.forEach(function (u, i) {
     const opt = el("option", "", u.name + "（" + u.department + "・" + (ROLE_LABEL[u.role] || u.role) + "）");
     opt.value = String(i);
@@ -233,10 +258,10 @@
     const u = PRESET_USERS[Number(presetSelect.value)];
     const fixed = presetSelect.value !== "" && !!u;
     loginName.value = fixed ? u.name : "";
-    loginDept.value = fixed ? u.department : "";
     loginRole.value = fixed ? u.role : "";
+    fillDepts(loginRole.value, fixed ? u.department : "");
     loginName.readOnly = fixed;
-    loginDept.readOnly = fixed;
+    loginDept.disabled = fixed;
     loginRole.disabled = fixed;
   }
   presetSelect.addEventListener("change", function () {
@@ -428,12 +453,16 @@
         return;
       }
       resetForm();
+      // 送出後切到「待審核」頁面，等倉管課主管簽核
+      viewSelect.value = "審核";
+      applyView();
       showMessage(
-        formMsg,
-        wasEditing ? "已更新領料單 " + wasEditing + "。" : "已送出領料單 " + res.data + "，等待主管審核。",
+        listMsg,
+        (wasEditing ? "已更新領料單 " + wasEditing : "已送出領料單 " + res.data) + "，等待倉管課主管簽核。",
         "ok"
       );
-      loadSlips();
+      loadSlips(true);
+      listCard.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
       showMessage(formMsg, errText(err), "err");
     } finally {
@@ -494,13 +523,14 @@
       b.addEventListener("click", () => startEdit(s));
       buttons.push(b);
     }
-    if (profile.role === "主管" && sameDept && !s.approved) {
-      const b = el("button", "primary", "審核通過");
+    // 倉管課主管簽核所有部門的領料單
+    if (profile.role === "主管" && !s.approved) {
+      const b = el("button", "primary", "簽核送出");
       b.type = "button";
       b.addEventListener("click", () =>
         act("approve_picking_slip", s.slip_no,
-          "確定審核通過領料單 " + s.slip_no + "？\n審核通過後就不能再修改。",
-          "領料單 " + s.slip_no + " 已審核通過。", b)
+          "確定簽核送出領料單 " + s.slip_no + "（" + s.department + "）？\n簽核後就不能再修改，並移到待發料。",
+          "領料單 " + s.slip_no + " 已簽核送出，移到待發料。", b)
       );
       buttons.push(b);
     }

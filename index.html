@@ -37,7 +37,7 @@
     <!-- 進入系統（匿名登入，不需帳號密碼） -->
     <section id="login-view" class="card" aria-labelledby="login-title" hidden>
       <h2 id="login-title">進入系統</h2>
-      <p class="hint-text first">不需要帳號密碼，選擇人員（或自行填寫名稱、部門與角色）就能開始使用。請只填寫虛構資料。</p>
+      <p class="hint-text first">不需要帳號密碼，選擇人員（或自行選擇角色、部門並填寫名稱）就能開始使用。請只填寫虛構資料。</p>
       <form id="login-form" novalidate>
         <div class="field">
           <label for="login-preset">選擇人員</label>
@@ -47,22 +47,24 @@
         </div>
         <div class="field-row">
           <div class="field">
-            <label for="login-name">名稱 <span class="req">*</span></label>
-            <input id="login-name" name="display_name" type="text" maxlength="50" autocomplete="name" required>
+            <label for="login-role">角色 <span class="req">*</span></label>
+            <select id="login-role" name="role" required>
+              <option value="">請選擇</option>
+              <option value="請領">領料部門</option>
+              <option value="主管">倉管課主管（審核）</option>
+              <option value="倉管">倉管人員（發料）</option>
+            </select>
           </div>
           <div class="field">
             <label for="login-department">部門 <span class="req">*</span></label>
-            <input id="login-department" name="department" type="text" maxlength="50" required>
+            <select id="login-department" name="department" required>
+              <option value="">請先選擇角色</option>
+            </select>
           </div>
         </div>
         <div class="field">
-          <label for="login-role">角色 <span class="req">*</span></label>
-          <select id="login-role" name="role" required>
-            <option value="">請選擇</option>
-            <option value="請領">請領部門</option>
-            <option value="主管">主管</option>
-            <option value="倉管">倉管人員</option>
-          </select>
+          <label for="login-name">名稱 <span class="req">*</span></label>
+          <input id="login-name" name="display_name" type="text" maxlength="50" autocomplete="name" required>
         </div>
         <div id="login-message" class="message" role="status" aria-live="polite" hidden></div>
         <button id="login-btn" type="submit" class="primary wide">進入</button>
@@ -76,9 +78,9 @@
     <section id="view-card" class="card view-card" hidden>
       <label for="view-select">功能</label>
       <select id="view-select">
-        <option value="領料">領料</option>
-        <option value="審核">審核</option>
-        <option value="發料">發料</option>
+        <option value="領料">領料（新增領料單）</option>
+        <option value="審核">待審核</option>
+        <option value="發料">待發料</option>
       </select>
       <p id="view-note" class="hint-text" hidden></p>
     </section>
