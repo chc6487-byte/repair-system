@@ -5,10 +5,19 @@
   // ---------- PWA：註冊 Service Worker 與離線提示 ----------
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("sw.js").catch(function () {
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(function () {
         /* 註冊失敗不影響一般使用 */
       });
     });
+    // 網站更新後，新版 Service Worker 接手時自動重新整理一次，換成新畫面
+    if (navigator.serviceWorker.controller) {
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      });
+    }
   }
 
   const $ = (id) => document.getElementById(id);

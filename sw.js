@@ -5,7 +5,7 @@
 // - Supabase 登入與資料 API：一律走網路，不快取，避免看到過期清單或重複送出。
 // 修改網站檔案後，請把 CACHE_VERSION 加 1，讓舊快取被清掉。
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const CACHE_NAME = "picking-pwa-" + CACHE_VERSION;
 
 const APP_SHELL = [
@@ -28,7 +28,8 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      await cache.addAll(APP_SHELL);
+      // cache: "reload"：略過瀏覽器的 HTTP 快取，確保存進來的是伺服器上的最新檔案
+      await cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" })));
       // CDN 檔案盡量預先快取；失敗不影響安裝，第一次使用時會再補上
       await Promise.all(
         CDN_ASSETS.map((url) => cache.add(url).catch(() => undefined))
@@ -56,7 +57,8 @@ self.addEventListener("activate", (event) => {
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
-    const response = await fetch(request);
+    // cache: "no-cache"：每次都向伺服器確認是否有新版（GitHub Pages 預設會讓瀏覽器快取 10 分鐘）
+    const response = await fetch(request, { cache: "no-cache" });
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch (err) {
