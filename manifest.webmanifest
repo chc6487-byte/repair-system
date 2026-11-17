@@ -1,7 +1,7 @@
 {
   "name": "產品領料單",
-  "short_name": "領料單",
-  "description": "示範用產品領料單系統：請領部門申請、主管審核、倉管發料。",
+  "short_name": "產品領料單",
+  "description": "示範用產品領料單系統：領料部門送出、倉管課主管簽核、倉管人員發料。",
   "lang": "zh-Hant-TW",
   "id": "./",
   "start_url": "./",
