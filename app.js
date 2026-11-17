@@ -1,4 +1,4 @@
-// 產品領料單前端：登入、新增／修改領料單、主管審核、倉管發料
+// 產品領料單前端：登入、建立帳號、新增／修改領料單、主管審核、倉管發料
 (function () {
   "use strict";
 
@@ -25,6 +25,16 @@
   const loginForm = $("login-form");
   const loginBtn = $("login-btn");
   const loginMsg = $("login-message");
+  const showSignupBtn = $("show-signup-btn");
+  const signupView = $("signup-view");
+  const signupForm = $("signup-form");
+  const signupBtn = $("signup-btn");
+  const signupMsg = $("signup-message");
+  const showLoginBtn = $("show-login-btn");
+  const profileView = $("profile-view");
+  const profileForm = $("profile-form");
+  const profileBtn = $("profile-btn");
+  const profileMsg = $("profile-message");
   const logoutBtn = $("logout-btn");
   const userInfo = $("user-info");
   const appMsg = $("app-message");
@@ -71,6 +81,12 @@
     const msg = error.message || String(error);
     if (/fetch|network|load failed/i.test(msg)) return "無法連線到伺服器，請檢查網路後再試。";
     if (msg === "Invalid login credentials") return "電子郵件或密碼錯誤。";
+    if (msg === "Email not confirmed") return "這個帳號還沒完成電子郵件確認，請先到信箱點確認連結。";
+    if (/already registered|already been registered/i.test(msg)) return "這個電子郵件已經註冊，請直接登入。";
+    if (/signups? not allowed|signup is disabled/i.test(msg)) return "目前不開放建立帳號，請聯絡管理員。";
+    if (/password should be/i.test(msg)) return "密碼至少需要 6 個字元。";
+    if (/rate limit/i.test(msg)) return "操作太頻繁，請稍後再試。";
+    if (/valid email|invalid format/i.test(msg)) return "電子郵件格式不正確。";
     if (/JWT|session/i.test(msg)) return "登入已過期，請重新登入。";
     return msg;
   }
@@ -86,12 +102,26 @@
     return "待審核";
   }
 
+  const ROLES = ["請領", "主管", "倉管"];
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // 檢查名稱、部門、角色（資料庫函式也會再檢查一次）
+  function validateProfile(name, department, role) {
+    if (!name) return "請填寫名稱。";
+    if (name.length > 50) return "名稱最多 50 字。";
+    if (!department) return "請填寫部門。";
+    if (department.length > 50) return "部門最多 50 字。";
+    if (ROLES.indexOf(role) < 0) return "請選擇角色。";
+    return "";
+  }
+
   // ---------- Supabase ----------
   const cfg = window.SUPABASE_CONFIG || {};
   if (!window.supabase || !cfg.url || !cfg.publishableKey) {
     loginView.hidden = false;
     showMessage(loginMsg, "系統載入失敗，請連上網路後重新整理頁面。", "err");
     loginBtn.disabled = true;
+    showSignupBtn.disabled = true;
     return;
   }
   const client = window.supabase.createClient(cfg.url, cfg.publishableKey);
@@ -106,6 +136,8 @@
     profile = null;
     slips = [];
     loginView.hidden = false;
+    signupView.hidden = true;
+    profileView.hidden = true;
     logoutBtn.hidden = true;
     userInfo.hidden = true;
     formCard.hidden = true;
@@ -128,6 +160,8 @@
       .maybeSingle();
 
     loginView.hidden = true;
+    signupView.hidden = true;
+    profileView.hidden = true;
     logoutBtn.hidden = false;
     hideMessage(appMsg);
 
@@ -140,7 +174,26 @@
       userInfo.hidden = true;
       formCard.hidden = true;
       listCard.hidden = true;
-      showMessage(appMsg, "這個帳號尚未設定部門與角色，請聯絡管理員。", "err");
+      // 建立帳號時填的資料存在 user_metadata；需要信箱確認的情況，第一次登入時才寫進資料庫
+      const meta = session.user.user_metadata || {};
+      const name = String(meta.display_name || "").trim();
+      const dept = String(meta.department || "").trim();
+      const role = String(meta.role || "");
+      if (!validateProfile(name, dept, role)) {
+        const res = await client.rpc("register_picking_profile", {
+          p_display_name: name,
+          p_department: dept,
+          p_role: role,
+        });
+        if (!res.error) return enter();
+        showMessage(profileMsg, errText(res.error), "err");
+      } else {
+        hideMessage(profileMsg);
+      }
+      $("profile-name").value = name;
+      $("profile-department").value = dept;
+      $("profile-role").value = ROLES.indexOf(role) >= 0 ? role : "";
+      profileView.hidden = false;
       return;
     }
 
@@ -181,6 +234,115 @@
     } finally {
       loginBtn.disabled = false;
       loginBtn.textContent = "登入";
+    }
+  });
+
+  // ---------- 建立帳號 ----------
+  showSignupBtn.addEventListener("click", function () {
+    hideMessage(loginMsg);
+    hideMessage(signupMsg);
+    loginView.hidden = true;
+    signupView.hidden = false;
+    $("signup-email").value = $("login-email").value.trim();
+    $("signup-email").focus();
+  });
+
+  showLoginBtn.addEventListener("click", function () {
+    signupView.hidden = true;
+    loginView.hidden = false;
+    $("login-email").focus();
+  });
+
+  signupForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    hideMessage(signupMsg);
+    const email = $("signup-email").value.trim();
+    const password = $("signup-password").value;
+    const password2 = $("signup-password2").value;
+    const name = $("signup-name").value.trim();
+    const dept = $("signup-department").value.trim();
+    const role = $("signup-role").value;
+
+    let problem = "";
+    if (!email) problem = "請填寫電子郵件。";
+    else if (!EMAIL_RE.test(email)) problem = "電子郵件格式不正確。";
+    else if (password.length < 6) problem = "密碼至少需要 6 個字元。";
+    else if (password !== password2) problem = "兩次輸入的密碼不一樣。";
+    else problem = validateProfile(name, dept, role);
+    if (problem) {
+      showMessage(signupMsg, problem, "err");
+      return;
+    }
+
+    signupBtn.disabled = true;
+    signupBtn.textContent = "建立中…";
+    try {
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: name, department: dept, role },
+          emailRedirectTo: window.location.href.split("#")[0].split("?")[0],
+        },
+      });
+      if (error) {
+        showMessage(signupMsg, errText(error), "err");
+        return;
+      }
+      // 電子郵件已註冊時，Supabase 為了保護隱私不回錯誤，而是回傳沒有 identities 的使用者
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        showMessage(signupMsg, "這個電子郵件已經註冊，請直接登入。", "err");
+        return;
+      }
+      signupForm.reset();
+      if (data.session) {
+        await enter(); // 不需信箱確認：直接登入，enter() 會寫入部門與角色
+        if (profile) showMessage(appMsg, "帳號建立完成，歡迎使用。", "ok");
+        return;
+      }
+      // 需要信箱確認
+      signupView.hidden = true;
+      loginView.hidden = false;
+      $("login-email").value = email;
+      showMessage(loginMsg, "帳號已建立。請到信箱點選確認連結，再回來登入。", "ok");
+    } catch (err) {
+      showMessage(signupMsg, errText(err), "err");
+    } finally {
+      signupBtn.disabled = false;
+      signupBtn.textContent = "建立帳號";
+    }
+  });
+
+  // 已登入但沒有部門與角色時，手動設定
+  profileForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    hideMessage(profileMsg);
+    const name = $("profile-name").value.trim();
+    const dept = $("profile-department").value.trim();
+    const role = $("profile-role").value;
+    const problem = validateProfile(name, dept, role);
+    if (problem) {
+      showMessage(profileMsg, problem, "err");
+      return;
+    }
+    profileBtn.disabled = true;
+    profileBtn.textContent = "設定中…";
+    try {
+      const { error } = await client.rpc("register_picking_profile", {
+        p_display_name: name,
+        p_department: dept,
+        p_role: role,
+      });
+      if (error) {
+        showMessage(profileMsg, errText(error), "err");
+        return;
+      }
+      await enter();
+    } catch (err) {
+      showMessage(profileMsg, errText(err), "err");
+    } finally {
+      profileBtn.disabled = false;
+      profileBtn.textContent = "完成設定";
     }
   });
 

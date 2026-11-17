@@ -91,8 +91,10 @@ main {
 @media (min-width: 560px) { .field-row { grid-template-columns: 1fr 1fr; } }
 .req { color: var(--err-text); }
 .hint-text { color: var(--muted); font-size: 0.85rem; margin: 12px 0 0; }
+.hint-text.first { margin: 0 0 12px; }
+.switch-btn { margin-top: 12px; }
 
-input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"] {
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], select {
   width: 100%;
   /* 16px 以上可避免 iPhone 點擊輸入框時自動放大畫面 */
   font-size: 16px;
@@ -105,7 +107,7 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
   min-height: 46px;
 }
 input[readonly] { color: var(--muted); }
-input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 
 /* 產品明細 */
 .items-head, .item-row {
