@@ -8,6 +8,7 @@
 --   1. 未登入（anon）完全不能讀寫。
 --   2. 已登入（authenticated）只能「讀取」資料表，不能直接新增、修改、刪除。
 --   3. 新增、修改、審核、發料一律透過下方的資料庫函式，函式內檢查角色與部門。
+--      建立帳號後，使用者透過 register_picking_profile 自行設定名稱、部門與角色（只能設定一次）。
 --   4. RLS：必須有設定部門與角色的帳號才看得到領料單。
 --   前端只能使用 publishable key；secret key 不可寫進任何檔案。
 -- =============================================================
@@ -18,7 +19,7 @@ begin;
 -- 一、資料表與 CHECK 限制
 -- -------------------------------------------------------------
 
--- 使用者的部門與角色（由管理員在 Supabase 後台建立帳號後手動新增）
+-- 使用者的部門與角色（使用者建立帳號後自行設定一次；之後只有管理員能用 SQL 修改）
 create table if not exists public.picking_profiles (
   user_id      uuid primary key references auth.users (id) on delete cascade,
   -- 顯示名稱：1～50 字
@@ -163,6 +164,43 @@ begin
   end if;
   if coalesce(btrim(p_picker_name), '') = '' or char_length(btrim(p_picker_name)) > 50 then
     raise exception '請填寫領料人（最多 50 字）' using errcode = '22023';
+  end if;
+end;
+$$;
+
+-- 設定帳號資料：登入者替「自己」設定名稱、部門與角色，只能設定一次
+-- 角色由使用者自行選擇（需求決定：使用者自行註冊並自選角色）
+create or replace function public.register_picking_profile(
+  p_display_name text,
+  p_department   text,
+  p_role         text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception '請先登入' using errcode = '42501';
+  end if;
+  if coalesce(btrim(p_display_name), '') = '' or char_length(btrim(p_display_name)) > 50 then
+    raise exception '請填寫名稱（最多 50 字）' using errcode = '22023';
+  end if;
+  if coalesce(btrim(p_department), '') = '' or char_length(btrim(p_department)) > 50 then
+    raise exception '請填寫部門（最多 50 字）' using errcode = '22023';
+  end if;
+  if p_role is null or p_role not in ('請領', '主管', '倉管') then
+    raise exception '角色只能是 請領、主管 或 倉管' using errcode = '22023';
+  end if;
+
+  insert into public.picking_profiles (user_id, display_name, department, role)
+  values (v_uid, btrim(p_display_name), btrim(p_department), p_role)
+  on conflict (user_id) do nothing;
+  if not found then
+    raise exception '這個帳號已經設定過部門與角色，如需修改請聯絡管理員' using errcode = '23505';
   end if;
 end;
 $$;
@@ -339,13 +377,15 @@ begin
 end;
 $$;
 
--- 函式執行權限：只開放四個操作函式給已登入使用者；內部檢查函式不開放
+-- 函式執行權限：只開放五個操作函式給已登入使用者；內部檢查函式不開放
 revoke all on function public.picking_check_items(jsonb) from public, anon, authenticated;
 revoke all on function public.picking_check_header(date, text) from public, anon, authenticated;
+revoke all on function public.register_picking_profile(text, text, text) from public, anon;
 revoke all on function public.create_picking_slip(date, text, jsonb) from public, anon;
 revoke all on function public.update_picking_slip(text, date, text, jsonb) from public, anon;
 revoke all on function public.approve_picking_slip(text) from public, anon;
 revoke all on function public.issue_picking_slip(text) from public, anon;
+grant execute on function public.register_picking_profile(text, text, text) to authenticated;
 grant execute on function public.create_picking_slip(date, text, jsonb) to authenticated;
 grant execute on function public.update_picking_slip(text, date, text, jsonb) to authenticated;
 grant execute on function public.approve_picking_slip(text) to authenticated;
@@ -354,18 +394,18 @@ grant execute on function public.issue_picking_slip(text) to authenticated;
 commit;
 
 -- =============================================================
--- 建立帳號（執行完上面的 SQL 後，由管理員操作）
+-- 建立帳號（執行完上面的 SQL 後的後台設定）
 --   1. Supabase 後台 → Authentication → Sign In / Providers：
---      關閉「Allow new users to sign up」，只讓管理員建立帳號。
---   2. Authentication → Users → Add user：輸入電子郵件與密碼，勾選 Auto Confirm User。
---   3. 在 SQL Editor 指定這個帳號的名稱、部門與角色（以下為虛構範例，請改成實際帳號的電子郵件）：
+--      開啟「Allow new users to sign up」，使用者才能在網頁上自行建立帳號。
+--   2. 同一頁的 Email 設定：
+--      * 開啟「Confirm email」：建立帳號後要先到信箱點確認連結，第一次登入時才寫入部門與角色。
+--      * 關閉「Confirm email」：建立帳號後直接登入（示範用較方便）。
+--   3. Authentication → URL Configuration：Site URL 與 Redirect URLs 加入網站網址
+--      （例如 https://chc6487-byte.github.io/repair-system/），確認信的連結才會回到網站。
 --
---   insert into public.picking_profiles (user_id, display_name, department, role)
---   select id, '林小美', '生產部', '請領' from auth.users where email = 'requester@example.com';
+-- 管理員修改帳號資料（使用者無法自行修改；以下為虛構範例）：
 --
---   insert into public.picking_profiles (user_id, display_name, department, role)
---   select id, '陳大文', '生產部', '主管' from auth.users where email = 'manager@example.com';
---
---   insert into public.picking_profiles (user_id, display_name, department, role)
---   select id, '黃志明', '倉庫', '倉管' from auth.users where email = 'warehouse@example.com';
+--   update public.picking_profiles
+--      set display_name = '林小美', department = '生產部', role = '請領'
+--    where user_id = (select id from auth.users where email = 'requester@example.com');
 -- =============================================================

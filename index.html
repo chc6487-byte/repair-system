@@ -49,7 +49,83 @@
         <div id="login-message" class="message" role="status" aria-live="polite" hidden></div>
         <button id="login-btn" type="submit" class="primary wide">登入</button>
       </form>
-      <p class="hint-text">帳號由管理員建立；忘記密碼請聯絡管理員。</p>
+      <button id="show-signup-btn" type="button" class="secondary wide switch-btn">還沒有帳號？建立帳號</button>
+      <p class="hint-text">忘記密碼請聯絡管理員。</p>
+    </section>
+
+    <!-- 建立帳號 -->
+    <section id="signup-view" class="card" aria-labelledby="signup-title" hidden>
+      <h2 id="signup-title">建立帳號</h2>
+      <form id="signup-form" novalidate>
+        <div class="field">
+          <label for="signup-email">電子郵件 <span class="req">*</span></label>
+          <input id="signup-email" name="email" type="email" autocomplete="username" inputmode="email" required>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="signup-password">密碼 <span class="req">*</span></label>
+            <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="6" required>
+          </div>
+          <div class="field">
+            <label for="signup-password2">再次輸入密碼 <span class="req">*</span></label>
+            <input id="signup-password2" name="password2" type="password" autocomplete="new-password" minlength="6" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="signup-name">名稱 <span class="req">*</span></label>
+            <input id="signup-name" name="display_name" type="text" maxlength="50" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="signup-department">部門 <span class="req">*</span></label>
+            <input id="signup-department" name="department" type="text" maxlength="50" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="signup-role">角色 <span class="req">*</span></label>
+          <select id="signup-role" name="role" required>
+            <option value="">請選擇</option>
+            <option value="請領">請領部門</option>
+            <option value="主管">主管</option>
+            <option value="倉管">倉管人員</option>
+          </select>
+        </div>
+        <div id="signup-message" class="message" role="status" aria-live="polite" hidden></div>
+        <div class="form-actions">
+          <button id="signup-btn" type="submit" class="primary wide">建立帳號</button>
+          <button id="show-login-btn" type="button" class="secondary wide">返回登入</button>
+        </div>
+      </form>
+      <p class="hint-text">密碼至少 6 個字元。名稱、部門與角色建立後無法自行修改，請只填寫虛構資料。</p>
+    </section>
+
+    <!-- 已登入但尚未設定部門與角色 -->
+    <section id="profile-view" class="card" aria-labelledby="profile-title" hidden>
+      <h2 id="profile-title">設定帳號資料</h2>
+      <p class="hint-text first">這個帳號還沒有設定名稱、部門與角色，設定後就能開始使用。設定後無法自行修改。</p>
+      <form id="profile-form" novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="profile-name">名稱 <span class="req">*</span></label>
+            <input id="profile-name" name="display_name" type="text" maxlength="50" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="profile-department">部門 <span class="req">*</span></label>
+            <input id="profile-department" name="department" type="text" maxlength="50" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="profile-role">角色 <span class="req">*</span></label>
+          <select id="profile-role" name="role" required>
+            <option value="">請選擇</option>
+            <option value="請領">請領部門</option>
+            <option value="主管">主管</option>
+            <option value="倉管">倉管人員</option>
+          </select>
+        </div>
+        <div id="profile-message" class="message" role="status" aria-live="polite" hidden></div>
+        <button id="profile-btn" type="submit" class="primary wide">完成設定</button>
+      </form>
     </section>
 
     <div id="app-message" class="message" role="status" aria-live="polite" hidden></div>

@@ -11,9 +11,17 @@
 ## 上線步驟
 
 1. 在 Supabase SQL Editor 執行 `supabase/picking_schema.sql`。
-2. Supabase 後台 → Authentication：關閉「Allow new users to sign up」，再用 Add user 建立帳號（勾選 Auto Confirm User）。
-3. 依 `supabase/picking_schema.sql` 檔案最後的範例，替每個帳號設定名稱、部門與角色（請領／主管／倉管）。
+2. Supabase 後台 → Authentication → Sign In / Providers：開啟「Allow new users to sign up」。
+   「Confirm email」可依需要開關：開啟時要先到信箱點確認連結才能登入；關閉時建立帳號後直接登入。
+3. Authentication → URL Configuration：Site URL 與 Redirect URLs 加入網站網址，確認信的連結才會回到網站。
 4. 儲存庫設為公開，並在 Settings → Pages 選擇 `main` 分支、根目錄發佈。
+
+## 建立帳號
+
+登入頁按「還沒有帳號？建立帳號」，填寫電子郵件、密碼（至少 6 個字元）、名稱、部門與角色（請領／主管／倉管）。
+名稱、部門與角色只能設定一次，之後要修改請管理員依 `supabase/picking_schema.sql` 檔案最後的範例用 SQL 修改。
+
+> 注意：角色由使用者自行選擇，任何人都能註冊成主管或倉管，只適合示範使用。
 
 ## 角色與權限
 
