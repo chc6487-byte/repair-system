@@ -72,6 +72,17 @@
 
     <div id="app-message" class="message" role="status" aria-live="polite" hidden></div>
 
+    <!-- 功能切換（登入後顯示） -->
+    <section id="view-card" class="card view-card" hidden>
+      <label for="view-select">功能</label>
+      <select id="view-select">
+        <option value="領料">領料</option>
+        <option value="審核">審核</option>
+        <option value="發料">發料</option>
+      </select>
+      <p id="view-note" class="hint-text" hidden></p>
+    </section>
+
     <!-- 新增／修改領料單（只有請領部門看得到） -->
     <section id="form-card" class="card" aria-labelledby="form-title" hidden>
       <h2 id="form-title">新增領料單</h2>

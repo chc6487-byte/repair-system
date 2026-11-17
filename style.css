@@ -92,6 +92,7 @@ main {
 .req { color: var(--err-text); }
 .hint-text { color: var(--muted); font-size: 0.85rem; margin: 12px 0 0; }
 .hint-text.first { margin: 0 0 12px; }
+.view-card > label { display: block; font-weight: 600; margin-bottom: 6px; }
 
 input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="number"], select {
   width: 100%;
