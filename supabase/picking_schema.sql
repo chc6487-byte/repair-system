@@ -8,7 +8,7 @@
 --   1. 未登入（anon）完全不能讀寫。
 --   2. 已登入（authenticated）只能「讀取」資料表，不能直接新增、修改、刪除。
 --   3. 新增、修改、審核、發料一律透過下方的資料庫函式，函式內檢查角色與部門。
---      建立帳號後，使用者透過 register_picking_profile 自行設定名稱、部門與角色（只能設定一次）。
+--      匿名登入後，使用者透過 register_picking_profile 自行設定名稱、部門與角色（只能設定一次）。
 --   4. RLS：必須有設定部門與角色的帳號才看得到領料單。
 --   前端只能使用 publishable key；secret key 不可寫進任何檔案。
 -- =============================================================
@@ -19,7 +19,7 @@ begin;
 -- 一、資料表與 CHECK 限制
 -- -------------------------------------------------------------
 
--- 使用者的部門與角色（使用者建立帳號後自行設定一次；之後只有管理員能用 SQL 修改）
+-- 使用者的部門與角色（使用者匿名登入後自行設定一次；之後只有管理員能用 SQL 修改）
 create table if not exists public.picking_profiles (
   user_id      uuid primary key references auth.users (id) on delete cascade,
   -- 顯示名稱：1～50 字
@@ -394,18 +394,21 @@ grant execute on function public.issue_picking_slip(text) to authenticated;
 commit;
 
 -- =============================================================
--- 建立帳號（執行完上面的 SQL 後的後台設定）
+-- 登入設定（執行完上面的 SQL 後的後台設定）
+--   網頁使用 Supabase 匿名登入，不需帳號密碼：使用者填寫名稱、部門與角色後，
+--   網頁先 signInAnonymously()，再呼叫 register_picking_profile 寫入資料。
 --   1. Supabase 後台 → Authentication → Sign In / Providers：
---      開啟「Allow new users to sign up」，使用者才能在網頁上自行建立帳號。
---   2. 同一頁的 Email 設定：
---      * 開啟「Confirm email」：建立帳號後要先到信箱點確認連結，第一次登入時才寫入部門與角色。
---      * 關閉「Confirm email」：建立帳號後直接登入（示範用較方便）。
---   3. Authentication → URL Configuration：Site URL 與 Redirect URLs 加入網站網址
---      （例如 https://chc6487-byte.github.io/repair-system/），確認信的連結才會回到網站。
+--      開啟「Allow anonymous sign-ins」，並保持「Allow new users to sign up」開啟。
+--   2. 匿名使用者一樣是 authenticated 角色，上面的權限與 RLS 不需另外修改。
+--   3. 建議：Authentication → Attack Protection 開啟 CAPTCHA，或留意匿名帳號數量
+--      （每次登出後重新進入都會產生一個新的匿名使用者）。
 --
 -- 管理員修改帳號資料（使用者無法自行修改；以下為虛構範例）：
 --
 --   update public.picking_profiles
 --      set display_name = '林小美', department = '生產部', role = '請領'
---    where user_id = (select id from auth.users where email = 'requester@example.com');
+--    where user_id = '00000000-0000-0000-0000-000000000000';  -- 換成該使用者的 user_id
+--
+--   查詢所有使用者的 user_id 與設定：
+--   select user_id, display_name, department, role from public.picking_profiles;
 -- =============================================================
