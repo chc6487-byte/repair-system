@@ -49,6 +49,9 @@
   const cancelEditBtn = $("cancel-edit-btn");
   const formMsg = $("form-message");
   const listCard = $("list-card");
+  const viewCard = $("view-card");
+  const viewSelect = $("view-select");
+  const viewNote = $("view-note");
   const listEl = $("slip-list");
   const listMsg = $("list-message");
   const refreshBtn = $("refresh-btn");
@@ -136,6 +139,7 @@
     loginView.hidden = false;
     logoutBtn.hidden = true;
     userInfo.hidden = true;
+    viewCard.hidden = true;
     formCard.hidden = true;
     listCard.hidden = true;
     hideMessage(appMsg);
@@ -166,6 +170,7 @@
     }
     if (!data) {
       userInfo.hidden = true;
+      viewCard.hidden = true;
       formCard.hidden = true;
       listCard.hidden = true;
       // 已登入但資料庫還沒有名稱、部門與角色（例如上次寫入失敗）：回到進入畫面補填，沿用同一個登入身分
@@ -180,11 +185,39 @@
       document.createTextNode("（" + profile.department + "・" + (ROLE_LABEL[profile.role] || profile.role) + "）")
     );
     userInfo.hidden = false;
-    formCard.hidden = profile.role !== "請領";
+    viewCard.hidden = false;
     listCard.hidden = false;
     resetForm();
+    viewSelect.value = DEFAULT_VIEW[profile.role] || "領料";
+    applyView();
     loadSlips();
   }
+
+  // ---------- 功能切換：領料／審核／發料 ----------
+  // 領料＝新增領料單＋全部清單；審核＝待審核清單；發料＝待發料清單
+  // 實際能按的按鈕仍依登入者的角色決定（資料庫函式也會再檢查）
+  const DEFAULT_VIEW = { 請領: "領料", 主管: "審核", 倉管: "發料" };
+  const VIEW_FILTER = { 領料: "all", 審核: "待審核", 發料: "待發料" };
+  const VIEW_NOTE = {
+    領料: "只有請領部門可以新增領料單；你可以在下方查看所有領料單。",
+    審核: "只有主管可以審核自己部門的領料單；你可以在下方查看待審核的單。",
+    發料: "只有倉管人員可以勾選發料；你可以在下方查看待發料的單。",
+  };
+  const VIEW_ROLE = { 領料: "請領", 審核: "主管", 發料: "倉管" };
+
+  function applyView() {
+    if (!profile) return;
+    const view = viewSelect.value;
+    formCard.hidden = !(view === "領料" && profile.role === "請領");
+    if (profile.role !== VIEW_ROLE[view]) {
+      viewNote.textContent = VIEW_NOTE[view];
+      viewNote.hidden = false;
+    } else {
+      viewNote.hidden = true;
+    }
+    setFilter(VIEW_FILTER[view]);
+  }
+  viewSelect.addEventListener("change", applyView);
 
   // ---------- 選擇人員下拉選單 ----------
   const presetSelect = $("login-preset");
@@ -329,6 +362,10 @@
   }
 
   function startEdit(s) {
+    if (viewSelect.value !== "領料") {
+      viewSelect.value = "領料";
+      applyView();
+    }
     editingNo = s.slip_no;
     hideMessage(formMsg);
     deptInput.value = s.department;
